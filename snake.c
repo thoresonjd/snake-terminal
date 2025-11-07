@@ -20,15 +20,12 @@ static const char* SNAKE = "\x1b[0;41m ";
 static const char* FOOD = "\x1b[0;46m ";
 static const uint8_t SLEEP_TIME_MILLIS = 100;
 
-// TODO: use result enum for game state tracking
-#if 0 // currently unused
 typedef enum {
 	SNAKE_OK,
 	SNAKE_FAIL,
 	SNAKE_WIN,
 	SNAKE_LOSE
 } snake_result_t;
-#endif
 
 typedef enum {
 	DIRECTION_UP    = 'A',
@@ -97,49 +94,52 @@ static uint16_t coord_to_index(coordinate_t coord) {
 }
 #endif
 
-// check for invalid index
-static coordinate_t index_to_coord(uint16_t idx, const grid_t* const grid) {
-	coordinate_t coord;
-	coord.x = idx % grid->width;
-	coord.y = idx / grid->width;
-	return coord;
+static snake_result_t index_to_coord(coordinate_t* const coord, uint16_t idx, const grid_t* const grid) {
+	uint16_t size = grid->width * grid->height;
+	if (idx >= size)
+		return SNAKE_FAIL;
+	coord->x = idx % grid->width;
+	coord->y = idx / grid->width;
+	return SNAKE_OK;
 }
 
-static coordinate_t compute_food(const snake_t* const snake, const grid_t* const grid) {
+static snake_result_t compute_food(coordinate_t* const food, const snake_t* const snake, const grid_t* const grid) {
 	srand(time(NULL)); // TODO: only call this once at the initialization stage of the program
-	coordinate_t food;
 	uint16_t size = grid->width * grid->height;
 	bool is_cell_available;
 	do {
 		is_cell_available = true;
-		food = index_to_coord(rand() % size, grid);
+		snake_result_t result = index_to_coord(food, rand() % size, grid);
+		if (result != SNAKE_OK)
+			return result;
 		for (uint16_t i = 0; i < snake->length; i++)
-			if (snake->body[i].x == food.x && snake->body[i].y == food.y)
+			if (snake->body[i].x == food->x && snake->body[i].y == food->y)
 				is_cell_available = false;
 	} while (!is_cell_available);
-	return food;
+	return SNAKE_OK;
 }
 
-static void wait() {
-	// TODO: error check
-	struct timespec req, rem;
-	req.tv_sec = 0;
-	req.tv_nsec = SLEEP_TIME_MILLIS * 1000000;
-	nanosleep(&req, &rem);	
+static snake_result_t wait() {
+	struct timespec remaining, requested = { 0, SLEEP_TIME_MILLIS * 1000000 };
+	if (nanosleep(&requested, &remaining))
+		return SNAKE_FAIL;
+	return SNAKE_OK;
 }
 
-static snake_t init_snake(const grid_t* const grid) {
+static snake_result_t init_snake(snake_t* snake, const grid_t* const grid) {
 	uint16_t size = grid->width * grid->height;
-	snake_t snake;
-	snake.length = 1;
-	snake.body = (coordinate_t*)malloc(size * sizeof(coordinate_t));
-	snake.body[snake.length - 1] = (coordinate_t){ grid->width / 2, grid->height / 2 };
-	snake.last_tail = snake.body[snake.length - 1];
-	snake.direction = DIRECTION_RIGHT;
-	return snake;	
+	snake->length = 1;
+	snake->body = (coordinate_t*)malloc(size * sizeof(coordinate_t));
+	if (!snake->body)
+		return SNAKE_FAIL;
+	snake->body[snake->length - 1] = (coordinate_t){ grid->width / 2, grid->height / 2 };
+	snake->last_tail = snake->body[snake->length - 1];
+	snake->direction = DIRECTION_RIGHT;
+	return SNAKE_OK;
 }
 
 static void draw_border(const grid_t* const grid) {
+	// +1 to account for terminal coordinates starting at 1, not 0
 	for (uint8_t i = 0; i < grid->height; i++)
 		printf("\x1b[%d;%dH\x1b[0;47m ", i + 1, grid->width + 1);
 	for (uint8_t i = 0; i <= grid->width; i++) // account for bottom-right corner
@@ -162,7 +162,7 @@ static void draw_snake(const snake_t* const snake) {
 
 static void process_input(snake_t* const snake) {
 	char c;
-	read(STDIN_FILENO, &c, 1);	
+	read(STDIN_FILENO, &c, 1); // no need to return error if nothing is read
 	if (c == '\x1b') { // ANSI escape code
 		getchar(); // ignore [
 		char value = getchar();
@@ -178,7 +178,7 @@ static void process_input(snake_t* const snake) {
 	}
 }
 
-static void update(snake_t* const snake, coordinate_t* const food, const grid_t* const grid) {
+static snake_result_t update(snake_t* const snake, coordinate_t* const food, const grid_t* const grid) {
 	// shift snake segments
 	snake->last_tail = snake->body[0];
 	for (uint16_t i = 0; i < snake->length - 1; i++)
@@ -196,12 +196,15 @@ static void update(snake_t* const snake, coordinate_t* const food, const grid_t*
 		head->x--;
 	// grow snake and create food if snake eats existing one
 	if (head->x == food->x && head->y == food->y) {
-		*food = compute_food(snake, grid);
+		snake_result_t result = compute_food(food, snake, grid);
+		if (result != SNAKE_OK)
+			return result;
 		snake->length++;
 		snake->body[snake->length - 1] = *head;
 	}
 	// flush output buffer so the result is displayed immediately
 	fflush(stdout);
+	return SNAKE_OK;
 }
 
 static bool parse_uint8(const char* const arg, uint8_t* const value) {
@@ -226,18 +229,28 @@ int main(int argc, char** argv) {
 		return 1;
 	if (grid.width > GRID_DIMENSION_MAX || grid.height > GRID_DIMENSION_MAX)
 		return 1;
-	snake_t snake = init_snake(&grid);
-	coordinate_t food = compute_food(&snake, &grid);
+	snake_t snake;
+	snake_result_t result = init_snake(&snake, &grid);
+	if (result != SNAKE_OK)
+		return 1;
+	coordinate_t food;
+	result = compute_food(&food, &snake, &grid);
+	if (result != SNAKE_OK)
+		return 1;
 	struct termios old_terminal = init_terminal();
 	clear_screen();
 	draw_border(&grid);
 	do {
 		draw_snake(&snake);
 		draw_food(&food);
-		wait();
+		result = wait();
+		if (result != SNAKE_OK)
+			break; // TODO: terminate loop on game over/bad state
 		process_input(&snake);
-		update(&snake, &food, &grid);
-	} while (true); // TODO: terminate loop on game over state
+		result = update(&snake, &food, &grid);
+		if (result != SNAKE_OK)
+			break; // TODO: terminate loop on game over/bad state
+	} while (true); // TODO: terminate loop on game over/bad state
 	free(snake.body);
 	snake.body = NULL;
 	reset_terminal(&old_terminal);
