@@ -4,6 +4,7 @@
  * @author Justin Thoreson
  */
 
+#include "snake.h"
 #include <fcntl.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -19,13 +20,6 @@ static const uint8_t GRID_DIMENSION_MAX = 50;
 static const char* SNAKE = "\x1b[0;41m ";
 static const char* FOOD = "\x1b[0;46m ";
 static const uint8_t SLEEP_TIME_MILLIS = 100;
-
-typedef enum {
-	SNAKE_OK,
-	SNAKE_FAIL,
-	SNAKE_WIN,
-	SNAKE_LOSE
-} snake_result_t;
 
 typedef enum {
 	DIRECTION_UP    = 'A',
@@ -126,6 +120,16 @@ static snake_result_t wait() {
 	return SNAKE_OK;
 }
 
+static snake_result_t init_grid(grid_t* const grid, const uint8_t* const width, const uint8_t* const height) {
+	if (*width < GRID_DIMENSION_MIN || *height < GRID_DIMENSION_MIN)
+		return SNAKE_FAIL;
+	if (*width > GRID_DIMENSION_MAX || *height > GRID_DIMENSION_MAX)
+		return SNAKE_FAIL;
+	grid->width = *width;
+	grid->height = *height;
+	return SNAKE_OK;
+}
+
 static snake_result_t init_snake(snake_t* snake, const grid_t* const grid) {
 	uint16_t size = grid->width * grid->height;
 	snake->length = 1;
@@ -207,36 +211,19 @@ static snake_result_t update(snake_t* const snake, coordinate_t* const food, con
 	return SNAKE_OK;
 }
 
-static bool parse_uint8(const char* const arg, uint8_t* const value) {
-	if (!arg || !value)
-		return false;
-	int64_t temp;
-	if (!sscanf(arg, "%ld", &temp))
-		return false;
-	if (temp < 0 || temp > UINT8_MAX)
-		return false;
-	*value = (uint8_t)temp;
-	return true;
-}
-
-int main(int argc, char** argv) {
-	if (argc != 3)
-		return 1;
+snake_result_t snake(const snake_args_t* const args) {
 	grid_t grid;
-	if (!parse_uint8(argv[1], &grid.width) || !parse_uint8(argv[2], &grid.height))
-		return 1;
-	if (grid.width < GRID_DIMENSION_MIN || grid.height < GRID_DIMENSION_MIN)
-		return 1;
-	if (grid.width > GRID_DIMENSION_MAX || grid.height > GRID_DIMENSION_MAX)
-		return 1;
-	snake_t snake;
-	snake_result_t result = init_snake(&snake, &grid);
+	snake_result_t result = init_grid(&grid, &args->grid_width, &args->grid_height);
 	if (result != SNAKE_OK)
-		return 1;
+		return result;
+	snake_t snake;
+	result = init_snake(&snake, &grid);
+	if (result != SNAKE_OK)
+		return result;
 	coordinate_t food;
 	result = compute_food(&food, &snake, &grid);
 	if (result != SNAKE_OK)
-		return 1;
+		return result;
 	struct termios old_terminal = init_terminal();
 	clear_screen();
 	draw_border(&grid);
@@ -254,5 +241,5 @@ int main(int argc, char** argv) {
 	free(snake.body);
 	snake.body = NULL;
 	reset_terminal(&old_terminal);
-	return 0;
+	return result;
 }
