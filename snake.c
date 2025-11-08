@@ -35,14 +35,14 @@ typedef struct {
 typedef struct {
 	coordinate_t* body;
 	coordinate_t last_tail;
-	direction_t direction;
 	uint16_t length;
+	direction_t direction;
 } snake_t;
 
 typedef struct {
-	uint8_t width, height;
 	snake_t snake;
 	coordinate_t food;
+	uint8_t width, height;
 } grid_t;
 
 static struct termios get_terminal() {
