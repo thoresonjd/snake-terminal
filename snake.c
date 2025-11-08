@@ -242,7 +242,7 @@ static snake_result_t update_grid(grid_t* const grid) {
 	// grow snake and create food if snake eats existing one
 	if (head->x == food->x && head->y == food->y) {
 		result = compute_food(grid);
-		if (compute_food(grid) != SNAKE_OK)
+		if (result != SNAKE_OK)
 			return result;
 		grow_snake(snake);
 	} else {
@@ -252,7 +252,7 @@ static snake_result_t update_grid(grid_t* const grid) {
 	// flush output buffer so the result is displayed immediately
 	if (result == SNAKE_OK)
 		fflush(stdout);
-	return result;
+	return snake->length == grid->width * grid->height ? SNAKE_WIN : result;
 }
 
 snake_result_t snake(const snake_args_t* const args) {
@@ -263,12 +263,17 @@ snake_result_t snake(const snake_args_t* const args) {
 	struct termios old_terminal = init_terminal();
 	clear_screen();
 	draw_border(&grid.width, &grid.height);
+	draw_food(&grid.food);
+	draw_snake(&grid.snake);
+	wait();
 	do {
-		draw_food(&grid.food);
-		draw_snake(&grid.snake);
-		wait();
 		update_direction(&grid.snake);
 		result = update_grid(&grid);
+		if (result == SNAKE_OK || result == SNAKE_WIN) {
+			draw_food(&grid.food);
+			draw_snake(&grid.snake);
+			wait();
+		}
 	} while (result == SNAKE_OK);
 	free(grid.snake.body);
 	grid.snake.body = NULL;
