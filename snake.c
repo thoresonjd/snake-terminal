@@ -159,10 +159,12 @@ static void draw_border(const uint8_t* const width, const uint8_t* const height)
 	for (uint8_t i = 0; i <= *width; i++) // account for bottom-right corner
 		printf("\x1b[%d;%dH\x1b[0;47m ", *height + 1, i + 1);
 	printf("\x1b[0m");
+	fflush(stdout);
 }
 
 static void draw_food(const coordinate_t* const food) {
 	printf("\x1b[%d;%dH%s\x1b[0m", food->y + 1, food->x + 1, FOOD);
+	fflush(stdout);
 }
 
 static void draw_snake(const snake_t* const snake) {
@@ -172,6 +174,7 @@ static void draw_snake(const snake_t* const snake) {
 		segment = &snake->body[i];
 		printf("\x1b[%d;%dH%s\x1b[0m", segment->y + 1, segment->x + 1, SNAKE);
 	}
+	fflush(stdout);
 }
 
 static void update_direction(snake_t* const snake) {
