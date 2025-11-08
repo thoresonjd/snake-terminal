@@ -193,16 +193,15 @@ static void update_direction(snake_t* const snake) {
 	}
 }
 
-static snake_result_t update_grid(grid_t* const grid) {
-	snake_t* snake = &grid->snake;
-	coordinate_t* food = &grid->food;
-	// shift snake segments
+static void shift_snake(snake_t* const snake) {
 	snake->last_tail = snake->body[0];
 	for (uint16_t i = 0; i < snake->length - 1; i++)
 		snake->body[i] = snake->body[i + 1];
-	// move snake forward
-	coordinate_t* head = &snake->body[snake->length - 1];
-	direction_t* direction = &snake->direction;
+}
+
+static void move_snake(grid_t* const grid) {
+	coordinate_t* head = &grid->snake.body[grid->snake.length - 1];
+	direction_t* direction = &grid->snake.direction;
 	if (*direction == DIRECTION_UP && head->y > 0)
 		head->y--;
 	else if (*direction == DIRECTION_DOWN && head->y < grid->height - 1)
@@ -211,13 +210,26 @@ static snake_result_t update_grid(grid_t* const grid) {
 		head->x++;
 	else if (*direction == DIRECTION_LEFT && head->x > 0)
 		head->x--;
+}
+
+static void grow_snake(snake_t* const snake) {
+	coordinate_t* head = &snake->body[snake->length - 1];
+	snake->length++;
+	snake->body[snake->length - 1] = *head;
+}
+
+static snake_result_t update_grid(grid_t* const grid) {
+	snake_t* snake = &grid->snake;
+	coordinate_t* head = &snake->body[snake->length - 1];
+	coordinate_t* food = &grid->food;
+	shift_snake(snake);
+	move_snake(grid);
 	// grow snake and create food if snake eats existing one
 	if (head->x == food->x && head->y == food->y) {
 		snake_result_t result = compute_food(grid);
 		if (result != SNAKE_OK)
 			return result;
-		snake->length++;
-		snake->body[snake->length - 1] = *head;
+		grow_snake(snake);
 	}
 	// flush output buffer so the result is displayed immediately
 	fflush(stdout);
@@ -231,8 +243,8 @@ snake_result_t snake(const snake_args_t* const args) {
 	clear_screen();
 	draw_border(&grid.width, &grid.height);
 	do {
-		draw_snake(&grid.snake);
 		draw_food(&grid.food);
+		draw_snake(&grid.snake);
 		result = wait();
 		if (result != SNAKE_OK)
 			break; // TODO: terminate loop on game over/bad state
