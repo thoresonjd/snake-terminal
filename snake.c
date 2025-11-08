@@ -228,8 +228,9 @@ static snake_result_t update_grid(grid_t* const grid) {
 		if (result != SNAKE_OK)
 			return result;
 		grow_snake(snake);
+	} else {
+		shift_snake(snake);
 	}
-	shift_snake(snake);
 	move_snake(grid);
 	// flush output buffer so the result is displayed immediately
 	fflush(stdout);
