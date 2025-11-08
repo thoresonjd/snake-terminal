@@ -87,11 +87,10 @@ static void move_cursor_to_end(const uint8_t* const height) {
 	printf("\x1b[%d;0H", *height + 2);
 }
 
-#if 0 // currently unused 
-static uint16_t coord_to_index(coordinate_t coord) {
-	return coord.x + coord.y * WIDTH;
+static void wait() {
+	struct timespec remaining, requested = { 0, SLEEP_TIME_MILLIS * 1000000 };
+	nanosleep(&requested, &remaining);
 }
-#endif
 
 static snake_result_t index_to_coord(coordinate_t* const coord, const uint16_t* const idx, const uint8_t* const width, const uint8_t* const height) {
 	uint16_t size = *width * *height;
@@ -100,11 +99,6 @@ static snake_result_t index_to_coord(coordinate_t* const coord, const uint16_t* 
 	coord->x = *idx % *width;
 	coord->y = *idx / *width;
 	return SNAKE_OK;
-}
-
-static void wait() {
-	struct timespec remaining, requested = { 0, SLEEP_TIME_MILLIS * 1000000 };
-	nanosleep(&requested, &remaining);
 }
 
 static bool is_snake_tile(const coordinate_t* const coord, const snake_t* const snake) {
@@ -154,31 +148,6 @@ static snake_result_t init_grid(grid_t* const grid, const uint8_t* const width, 
 		return result;
 	srand(time(NULL));
 	return SNAKE_OK;
-}
-
-static void draw_border(const uint8_t* const width, const uint8_t* const height) {
-	// +1 to account for terminal coordinates starting at 1, not 0
-	for (uint8_t i = 0; i < *height; i++)
-		printf("\x1b[%d;%dH\x1b[0;47m ", i + 1, *width + 1);
-	for (uint8_t i = 0; i <= *width; i++) // account for bottom-right corner
-		printf("\x1b[%d;%dH\x1b[0;47m ", *height + 1, i + 1);
-	printf("\x1b[0m");
-	fflush(stdout);
-}
-
-static void draw_food(const coordinate_t* const food) {
-	printf("\x1b[%d;%dH%s\x1b[0m", food->y + 1, food->x + 1, FOOD);
-	fflush(stdout);
-}
-
-static void draw_snake(const snake_t* const snake) {
-	const coordinate_t* segment = &snake->last_tail;
-	printf("\x1b[%d;%dH \x1b[0m", segment->y + 1, segment->x + 1);
-	for (uint16_t i = 0; i < snake->length; i++) {
-		segment = &snake->body[i];
-		printf("\x1b[%d;%dH%s\x1b[0m", segment->y + 1, segment->x + 1, SNAKE);
-	}
-	fflush(stdout);
 }
 
 static void update_direction(snake_t* const snake) {
@@ -257,6 +226,31 @@ static snake_result_t update_grid(grid_t* const grid) {
 	if (result == SNAKE_OK)
 		fflush(stdout);
 	return snake->length == grid->width * grid->height ? SNAKE_WIN : result;
+}
+
+static void draw_border(const uint8_t* const width, const uint8_t* const height) {
+	// +1 to account for terminal coordinates starting at 1, not 0
+	for (uint8_t i = 0; i < *height; i++)
+		printf("\x1b[%d;%dH\x1b[0;47m ", i + 1, *width + 1);
+	for (uint8_t i = 0; i <= *width; i++) // account for bottom-right corner
+		printf("\x1b[%d;%dH\x1b[0;47m ", *height + 1, i + 1);
+	printf("\x1b[0m");
+	fflush(stdout);
+}
+
+static void draw_food(const coordinate_t* const food) {
+	printf("\x1b[%d;%dH%s\x1b[0m", food->y + 1, food->x + 1, FOOD);
+	fflush(stdout);
+}
+
+static void draw_snake(const snake_t* const snake) {
+	const coordinate_t* segment = &snake->last_tail;
+	printf("\x1b[%d;%dH \x1b[0m", segment->y + 1, segment->x + 1);
+	for (uint16_t i = 0; i < snake->length; i++) {
+		segment = &snake->body[i];
+		printf("\x1b[%d;%dH%s\x1b[0m", segment->y + 1, segment->x + 1, SNAKE);
+	}
+	fflush(stdout);
 }
 
 snake_result_t snake(const snake_args_t* const args) {
