@@ -92,7 +92,12 @@ static void wait() {
 	nanosleep(&requested, &remaining);
 }
 
-static snake_result_t index_to_coord(coordinate_t* const coord, const uint16_t* const idx, const uint8_t* const width, const uint8_t* const height) {
+static snake_result_t index_to_coord(
+	coordinate_t* const coord,
+	const uint16_t* const idx,
+	const uint8_t* const width,
+	const uint8_t* const height
+) {
 	uint16_t size = *width * *height;
 	if (*idx >= size)
 		return SNAKE_FAIL;
@@ -101,7 +106,10 @@ static snake_result_t index_to_coord(coordinate_t* const coord, const uint16_t* 
 	return SNAKE_OK;
 }
 
-static bool is_snake_tile(const coordinate_t* const coord, const snake_t* const snake) {
+static bool is_snake_tile(
+	const coordinate_t* const coord,
+	const snake_t* const snake
+) {
 	for (uint16_t i = 0; i < snake->length; i++)
 		if (snake->body[i].x == coord->x && snake->body[i].y == coord->y)
 			return true;
@@ -133,7 +141,11 @@ static snake_result_t init_snake(grid_t* const grid) {
 	return SNAKE_OK;
 }
 
-static snake_result_t init_grid(grid_t* const grid, const uint8_t* const width, const uint8_t* const height) {
+static snake_result_t init_grid(
+	grid_t* const grid,
+	const uint8_t* const width,
+	const uint8_t* const height
+) {
 	if (*width < GRID_DIMENSION_MIN || *height < GRID_DIMENSION_MIN)
 		return SNAKE_FAIL;
 	if (*width > GRID_DIMENSION_MAX || *height > GRID_DIMENSION_MAX)
@@ -228,7 +240,10 @@ static snake_result_t update_grid(grid_t* const grid) {
 	return snake->length == grid->width * grid->height ? SNAKE_WIN : result;
 }
 
-static void draw_border(const uint8_t* const width, const uint8_t* const height) {
+static void draw_border(
+	const uint8_t* const width,
+	const uint8_t* const height
+) {
 	// +1 to account for terminal coordinates starting at 1, not 0
 	for (uint8_t i = 0; i < *height; i++)
 		printf("\x1b[%d;%dH\x1b[0;47m ", i + 1, *width + 1);

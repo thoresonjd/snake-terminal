@@ -11,7 +11,11 @@
 
 static bool parse_uint8(const char* const arg, uint8_t* const value);
 
-static bool parse_args(snake_args_t* const args, const int* const argc, char** const argv);
+static bool parse_args(
+	snake_args_t* const args,
+	const int* const argc,
+	char** const argv
+);
 
 int main(int argc, char** argv) {
 	snake_args_t args = { 0 };
@@ -34,7 +38,11 @@ static bool parse_uint8(const char* const arg, uint8_t* const value) {
 	return true;
 }
 
-static bool parse_args(snake_args_t* const args, const int* const argc, char** const argv) {
+static bool parse_args(
+	snake_args_t* const args,
+	const int* const argc,
+	char** const argv
+) {
 	if (*argc != 3)
 		return false;
 	if (!parse_uint8(argv[1], &args->grid_width) || !parse_uint8(argv[2], &args->grid_height))
