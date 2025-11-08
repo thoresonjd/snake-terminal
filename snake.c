@@ -83,6 +83,10 @@ static void clear_screen() {
 	printf("\x1b[2J\x1b[H");
 }
 
+static void move_cursor_to_end(const uint8_t* const height) {
+	printf("\x1b[%d;0H", *height + 2);
+}
+
 #if 0 // currently unused 
 static uint16_t coord_to_index(coordinate_t coord) {
 	return coord.x + coord.y * WIDTH;
@@ -275,6 +279,7 @@ snake_result_t snake(const snake_args_t* const args) {
 			wait();
 		}
 	} while (result == SNAKE_OK);
+	move_cursor_to_end(&grid.height);
 	free(grid.snake.body);
 	grid.snake.body = NULL;
 	reset_terminal(&old_terminal);
