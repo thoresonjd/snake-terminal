@@ -222,8 +222,6 @@ static snake_result_t update_grid(grid_t* const grid) {
 	snake_t* snake = &grid->snake;
 	coordinate_t* head = &snake->body[snake->length - 1];
 	coordinate_t* food = &grid->food;
-	shift_snake(snake);
-	move_snake(grid);
 	// grow snake and create food if snake eats existing one
 	if (head->x == food->x && head->y == food->y) {
 		snake_result_t result = compute_food(grid);
@@ -231,6 +229,8 @@ static snake_result_t update_grid(grid_t* const grid) {
 			return result;
 		grow_snake(snake);
 	}
+	shift_snake(snake);
+	move_snake(grid);
 	// flush output buffer so the result is displayed immediately
 	fflush(stdout);
 	return SNAKE_OK;
