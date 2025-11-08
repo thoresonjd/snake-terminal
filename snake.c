@@ -98,11 +98,16 @@ static snake_result_t index_to_coord(coordinate_t* const coord, const uint16_t* 
 	return SNAKE_OK;
 }
 
-static snake_result_t wait() {
+static void wait() {
 	struct timespec remaining, requested = { 0, SLEEP_TIME_MILLIS * 1000000 };
-	if (nanosleep(&requested, &remaining))
-		return SNAKE_FAIL;
-	return SNAKE_OK;
+	nanosleep(&requested, &remaining);
+}
+
+static bool is_snake_tile(const coordinate_t* const coord, const snake_t* const snake) {
+	for (uint16_t i = 0; i < snake->length; i++)
+		if (snake->body[i].x == coord->x && snake->body[i].y == coord->y)
+			return true;
+	return false;
 }
 
 static snake_result_t compute_food(grid_t* const grid) {
@@ -110,18 +115,12 @@ static snake_result_t compute_food(grid_t* const grid) {
 	uint16_t size = grid->width * grid->height;
 	snake_t* snake = &grid->snake;
 	coordinate_t* food = &grid->food;
-	bool is_cell_available;
+	snake_result_t result = SNAKE_OK;
 	do {
-		is_cell_available = true;
 		uint16_t idx = rand() % size;
-		snake_result_t result = index_to_coord(food, &idx, &grid->width, &grid->height);
-		if (result != SNAKE_OK)
-			return result;
-		for (uint16_t i = 0; i < snake->length; i++)
-			if (snake->body[i].x == food->x && snake->body[i].y == food->y)
-				is_cell_available = false;
-	} while (!is_cell_available);
-	return SNAKE_OK;
+		result = index_to_coord(food, &idx, &grid->width, &grid->height);
+	} while (result == SNAKE_OK && is_snake_tile(food, snake));
+	return result;
 }
 
 static snake_result_t init_snake(grid_t* const grid) {
@@ -199,17 +198,31 @@ static void shift_snake(snake_t* const snake) {
 		snake->body[i] = snake->body[i + 1];
 }
 
-static void move_snake(grid_t* const grid) {
+static snake_result_t move_snake(grid_t* const grid) {
 	coordinate_t* head = &grid->snake.body[grid->snake.length - 1];
+	coordinate_t new_head = *head;
 	direction_t* direction = &grid->snake.direction;
-	if (*direction == DIRECTION_UP && head->y > 0)
-		head->y--;
-	else if (*direction == DIRECTION_DOWN && head->y < grid->height - 1)
-		head->y++;
-	else if (*direction == DIRECTION_RIGHT && head->x < grid->width - 1)
-		head->x++;
-	else if (*direction == DIRECTION_LEFT && head->x > 0)
-		head->x--;
+	if (*direction == DIRECTION_UP) {
+		if  (new_head.y <= 0)
+			return SNAKE_LOSE;
+		new_head.y--;
+	} else if (*direction == DIRECTION_DOWN) {
+		if (new_head.y >= grid->height - 1)
+			return SNAKE_LOSE;
+		new_head.y++;
+	} else if (*direction == DIRECTION_RIGHT) {
+		if (new_head.x >= grid->width - 1)
+			return SNAKE_LOSE;
+		new_head.x++;
+	} else if (*direction == DIRECTION_LEFT) {
+		if (new_head.x <= 0)
+			return SNAKE_LOSE;
+		new_head.x--;
+	}
+	if (is_snake_tile(&new_head, &grid->snake))
+		return SNAKE_LOSE;
+	*head = new_head;
+	return SNAKE_OK;
 }
 
 static void grow_snake(snake_t* const snake) {
@@ -222,38 +235,38 @@ static snake_result_t update_grid(grid_t* const grid) {
 	snake_t* snake = &grid->snake;
 	coordinate_t* head = &snake->body[snake->length - 1];
 	coordinate_t* food = &grid->food;
+	snake_result_t result = SNAKE_OK;
 	// grow snake and create food if snake eats existing one
 	if (head->x == food->x && head->y == food->y) {
-		snake_result_t result = compute_food(grid);
-		if (result != SNAKE_OK)
+		result = compute_food(grid);
+		if (compute_food(grid) != SNAKE_OK)
 			return result;
 		grow_snake(snake);
 	} else {
 		shift_snake(snake);
 	}
-	move_snake(grid);
+	result = move_snake(grid);
 	// flush output buffer so the result is displayed immediately
-	fflush(stdout);
-	return SNAKE_OK;
+	if (result == SNAKE_OK)
+		fflush(stdout);
+	return result;
 }
 
 snake_result_t snake(const snake_args_t* const args) {
 	grid_t grid;
 	snake_result_t result = init_grid(&grid, &args->grid_width, &args->grid_height);
+	if (result != SNAKE_OK)
+		return result;
 	struct termios old_terminal = init_terminal();
 	clear_screen();
 	draw_border(&grid.width, &grid.height);
 	do {
 		draw_food(&grid.food);
 		draw_snake(&grid.snake);
-		result = wait();
-		if (result != SNAKE_OK)
-			break; // TODO: terminate loop on game over/bad state
+		wait();
 		update_direction(&grid.snake);
 		result = update_grid(&grid);
-		if (result != SNAKE_OK)
-			break; // TODO: terminate loop on game over/bad state
-	} while (true); // TODO: terminate loop on game over/bad state
+	} while (result == SNAKE_OK);
 	free(grid.snake.body);
 	grid.snake.body = NULL;
 	reset_terminal(&old_terminal);
