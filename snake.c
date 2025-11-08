@@ -111,7 +111,6 @@ static bool is_snake_tile(const coordinate_t* const coord, const snake_t* const 
 }
 
 static snake_result_t compute_food(grid_t* const grid) {
-	srand(time(NULL)); // TODO: only call this once at the initialization stage of the program
 	uint16_t size = grid->width * grid->height;
 	snake_t* snake = &grid->snake;
 	coordinate_t* food = &grid->food;
@@ -149,6 +148,7 @@ static snake_result_t init_grid(grid_t* const grid, const uint8_t* const width, 
 	result = compute_food(grid);
 	if (result != SNAKE_OK)
 		return result;
+	srand(time(NULL));
 	return SNAKE_OK;
 }
 
