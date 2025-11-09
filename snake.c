@@ -45,6 +45,92 @@ typedef struct {
 	uint8_t width, height;
 } grid_t;
 
+static struct termios get_terminal();
+
+static void set_terminal(const struct termios* const terminal);
+
+static struct termios terminal_noncanon(struct termios terminal);
+
+static void stdin_set_flag(int flag);
+
+static struct termios init_terminal();
+
+static void reset_terminal(const struct termios* const terminal);
+
+static void clear_screen();
+
+static void move_cursor_to_end(const uint8_t* const height);
+
+static void wait();
+
+static snake_result_t index_to_coord(
+	coordinate_t* const coord,
+	const uint16_t* const idx,
+	const uint8_t* const width,
+	const uint8_t* const height
+);
+
+static bool is_snake_tile(
+	const coordinate_t* const coord,
+	const snake_t* const snake
+);
+
+static snake_result_t compute_food(grid_t* const grid);
+
+static snake_result_t init_snake(grid_t* const grid);
+
+static snake_result_t init_grid(
+	grid_t* const grid,
+	const uint8_t* const width,
+	const uint8_t* const height
+);
+
+static void update_direction(snake_t* const snake);
+
+static void shift_snake(snake_t* const snake);
+
+static snake_result_t move_snake(grid_t* const grid);
+
+static void grow_snake(snake_t* const snake);
+
+static snake_result_t update_grid(grid_t* const grid);
+
+static void draw_border(
+	const uint8_t* const width,
+	const uint8_t* const height
+);
+
+static void draw_food(const coordinate_t* const food);
+
+static void draw_snake(const snake_t* const snake);
+
+snake_result_t snake(const snake_args_t* const args) {
+	grid_t grid;
+	snake_result_t result = init_grid(&grid, &args->grid_width, &args->grid_height);
+	if (result != SNAKE_OK)
+		return result;
+	struct termios old_terminal = init_terminal();
+	clear_screen();
+	draw_border(&grid.width, &grid.height);
+	draw_food(&grid.food);
+	draw_snake(&grid.snake);
+	wait();
+	do {
+		update_direction(&grid.snake);
+		result = update_grid(&grid);
+		if (result == SNAKE_OK || result == SNAKE_WIN) {
+			draw_food(&grid.food);
+			draw_snake(&grid.snake);
+			wait();
+		}
+	} while (result == SNAKE_OK);
+	move_cursor_to_end(&grid.height);
+	free(grid.snake.body);
+	grid.snake.body = NULL;
+	reset_terminal(&old_terminal);
+	return result;
+}
+
 static struct termios get_terminal() {
 	struct termios terminal;
 	tcgetattr(STDIN_FILENO, &terminal);
@@ -268,29 +354,3 @@ static void draw_snake(const snake_t* const snake) {
 	fflush(stdout);
 }
 
-snake_result_t snake(const snake_args_t* const args) {
-	grid_t grid;
-	snake_result_t result = init_grid(&grid, &args->grid_width, &args->grid_height);
-	if (result != SNAKE_OK)
-		return result;
-	struct termios old_terminal = init_terminal();
-	clear_screen();
-	draw_border(&grid.width, &grid.height);
-	draw_food(&grid.food);
-	draw_snake(&grid.snake);
-	wait();
-	do {
-		update_direction(&grid.snake);
-		result = update_grid(&grid);
-		if (result == SNAKE_OK || result == SNAKE_WIN) {
-			draw_food(&grid.food);
-			draw_snake(&grid.snake);
-			wait();
-		}
-	} while (result == SNAKE_OK);
-	move_cursor_to_end(&grid.height);
-	free(grid.snake.body);
-	grid.snake.body = NULL;
-	reset_terminal(&old_terminal);
-	return result;
-}
