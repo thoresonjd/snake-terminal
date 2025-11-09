@@ -1,6 +1,6 @@
 /**
  * @file main.c
- * @brief A snake game that can be played in the terminal.
+ * @brief An implementation of snake playable within the terminal.
  * @author Justin Thoreson
  */
 
@@ -9,8 +9,21 @@
 #include <stdint.h>
 #include <stdio.h>
 
+/**
+ * @brief Parse an eight-bit unsigned integer.
+ * @param[in] arg The string argument to parse
+ * @param[out] value The parsed integer
+ * @return true if the integer is parsed successfully, false otherwise
+ */
 static bool parse_uint8(const char* const arg, uint8_t* const value);
 
+/**
+ * @brief Parse command line arguments.
+ * @param[out] args The parsed snake game arguments
+ * @param[in] argc The number of command line arguments
+ * @param[in] argv The command line arguments to parse
+ * @return true if the arguments are parsed successfully, false otherwise
+ */
 static bool parse_args(
 	snake_args_t* const args,
 	const int* const argc,

@@ -1,6 +1,6 @@
 /**
  * @file snake.c
- * @brief A snake game that can be played in the terminal.
+ * @brief An implementation of snake playable within the terminal.
  * @author Justin Thoreson
  */
 
@@ -15,12 +15,34 @@
 #include <time.h>
 #include <unistd.h>
 
+/**
+ * @brief The minimum allowed dimension (width/height) of the grid.
+ */
 static const uint8_t GRID_DIMENSION_MIN = 5;
+
+/**
+ * @brief The maximum allowed dimension (width/height) of the grid.
+ */
 static const uint8_t GRID_DIMENSION_MAX = 50;
-static const char* SNAKE = "\x1b[0;41m ";
-static const char* FOOD = "\x1b[0;46m ";
+
+/**
+ * @brief The delay between frames/iterations in milliseconds.
+ */
 static const uint8_t SLEEP_TIME_MILLIS = 100;
 
+/**
+ * @brief The visual representation (color and character) of the snake.
+ */
+static const char* SNAKE = "\x1b[0;41m ";
+
+/**
+ * @brief The visual representation (color and character) of the food.
+ */
+static const char* FOOD = "\x1b[0;46m ";
+
+/**
+ * @brief Enumeration of all directions of snake movement.
+ */
 typedef enum {
 	DIRECTION_UP    = 'A',
 	DIRECTION_DOWN  = 'B',
@@ -28,10 +50,16 @@ typedef enum {
 	DIRECTION_LEFT  = 'D'
 } direction_t;
 
+/**
+ * @brief A coordinate within the grid.
+ */
 typedef struct {
 	uint8_t x, y;
 } coordinate_t;
 
+/**
+ * @brief The snake itself and all data pertaining to it.
+ */
 typedef struct {
 	coordinate_t* body;
 	coordinate_t last_tail;
@@ -39,30 +67,76 @@ typedef struct {
 	direction_t direction;
 } snake_t;
 
+/**
+ * @brief The grid and everything within it.
+ */
 typedef struct {
 	snake_t snake;
 	coordinate_t food;
 	uint8_t width, height;
 } grid_t;
 
+/**
+ * @brief Retrieve the current terminal settings.
+ * @return The parameters of the current terminal.
+ */
 static struct termios get_terminal();
 
+/**
+ * @brief Set the attributes of the current terminal.
+ * @param[in] terminal The terminal parameters to set.
+ */
 static void set_terminal(const struct termios* const terminal);
 
+/**
+ * @brief Enable noncanonical mode/disable canonical mode and disable the
+ *        echoing for the given terminal attributes.
+ * @param[in] terminal The provided terminal settings to modify.
+ * @return A copy of the provided terminal settings in noncanonical mode.
+ */
 static struct termios terminal_noncanon(struct termios terminal);
 
+/**
+ * @brief Set a flag for STDIN.
+ * @param[in] flag The flag to set
+ */
 static void stdin_set_flag(int flag);
 
+/**
+ * @brief Initialize the terminal configuration.
+ * @return The attributes of the terminal prior to initialization
+ */
 static struct termios init_terminal();
 
+/**
+ * @brief Reset the terminal configuration.
+ * @param[in] terminal The terminal settings to set during the reset
+ */
 static void reset_terminal(const struct termios* const terminal);
 
+/**
+ * @brief Clear the terminal and reset the cursor.
+ */
 static void clear_screen();
 
+/**
+ * @brief Move the cursor below the grid.
+ * @param[in] height The height of the grid
+ */
 static void move_cursor_to_end(const uint8_t* const height);
 
+/**
+ * @brief Sleep.
+ */
 static void wait();
 
+/**
+ * @brief Convert an index in the grid (one-dimensional) to a coordinate.
+ * @param[out] coord The converted coordinate
+ * @param[in] idx The index to convert to a coordinate
+ * @param[in] width The width of the grid
+ * @param[in] height The height of the grid
+ */
 static snake_result_t index_to_coord(
 	coordinate_t* const coord,
 	const uint16_t* const idx,
@@ -70,38 +144,96 @@ static snake_result_t index_to_coord(
 	const uint8_t* const height
 );
 
+/**
+ * @brief Check if a coordinate corresponds to a segment of the snake.
+ * @param[in] coord The coordinate to check
+ * @param[in] snake The snake itself
+ * @return true if the coordinate is a snake tile, false otherwise
+ */
 static bool is_snake_tile(
 	const coordinate_t* const coord,
 	const snake_t* const snake
 );
 
+/**
+ * @brief Compute a new food location.
+ * @param[in,out] grid The grid
+ * @return The result of the food computation
+ */
 static snake_result_t compute_food(grid_t* const grid);
 
+/**
+ * @brief Initialize the snake.
+ * @param[in,out] grid The grid
+ * @return The result of the snake initialization
+ */
 static snake_result_t init_snake(grid_t* const grid);
 
+/**
+ * @brief Initialize the grid.
+ * @param[out] grid The grid
+ * @param[in] width The width of the grid
+ * @param[in] height The height of the grid
+ * @return The result of the grid initialization
+ */
 static snake_result_t init_grid(
 	grid_t* const grid,
 	const uint8_t* const width,
 	const uint8_t* const height
 );
 
+/**
+ * @brief Change the direction of the snake's movement via the keyboard.
+ * @param[in,out] snake The snake itself
+ */
 static void update_direction(snake_t* const snake);
 
+/**
+ * @brief Shift the snake's segments back by one.
+ * @param[in,out] snake The snake itself
+ */
 static void shift_snake(snake_t* const snake);
 
+/**
+ * @brief Move the snake in the current direction by one.
+ * @param[in,out] grid The grid
+ * @return The result of moving the snake
+ */
 static snake_result_t move_snake(grid_t* const grid);
 
+/**
+ * @brief Grow the snake by one unit.
+ * @param[in,out] snake The snake itself
+ */
 static void grow_snake(snake_t* const snake);
 
+/**
+ * @brief Update the state of the grid.
+ * @param[in,out] grid The grid
+ * @return The result of updating the grid
+ */
 static snake_result_t update_grid(grid_t* const grid);
 
+/**
+ * @brief Render the border around the grid.
+ * @param[in] width The width of the grid
+ * @param[in] height The height of the grid
+ */
 static void draw_border(
 	const uint8_t* const width,
 	const uint8_t* const height
 );
 
+/**
+ * @brief Render a piece of food.
+ * @param[in] food The piece of food to render
+ */
 static void draw_food(const coordinate_t* const food);
 
+/**
+ * @brief Render the snake.
+ * @param[in] snake The snake itself
+ */
 static void draw_snake(const snake_t* const snake);
 
 snake_result_t snake(const snake_args_t* const args) {
