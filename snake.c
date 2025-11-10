@@ -385,15 +385,15 @@ static void update_direction(snake_t* const snake) {
 	read(STDIN_FILENO, &c, 1); // no need to return error if nothing is read
 	if (c == '\x1b') { // ANSI escape code
 		getchar(); // ignore [
-		char value = getchar();
+		c = getchar();
 		direction_t* const direction = &snake->direction;
-		if (value == DIRECTION_UP && *direction != DIRECTION_DOWN)
+		if (c == DIRECTION_UP && *direction != DIRECTION_DOWN)
 			*direction = DIRECTION_UP;
-		else if (value == DIRECTION_DOWN && *direction != DIRECTION_UP)
+		else if (c == DIRECTION_DOWN && *direction != DIRECTION_UP)
 			*direction = DIRECTION_DOWN;
-		else if (value == DIRECTION_RIGHT && *direction != DIRECTION_LEFT)
+		else if (c == DIRECTION_RIGHT && *direction != DIRECTION_LEFT)
 			*direction = DIRECTION_RIGHT;
-		else if (value == DIRECTION_LEFT && *direction != DIRECTION_RIGHT)
+		else if (c == DIRECTION_LEFT && *direction != DIRECTION_RIGHT)
 			*direction = DIRECTION_LEFT;
 	}
 }
