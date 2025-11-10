@@ -84,6 +84,9 @@ static void print_snake_result(const snake_result_t* const result) {
 		case SNAKE_FAIL:
 			printf("SNAKE_FAIL (%d)\n", SNAKE_FAIL);
 			break;
+		case SNAKE_BAD_DIMENSION:
+			printf("SNAKE_BAD_DIMENSION (%d)\n", SNAKE_BAD_DIMENSION);
+			break;
 		case SNAKE_WIN:
 			printf("SNAKE_WIN (%d)\n", SNAKE_WIN);
 			break;

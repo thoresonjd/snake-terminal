@@ -365,9 +365,9 @@ static snake_result_t init_grid(
 	const uint8_t* const height
 ) {
 	if (*width < GRID_DIMENSION_MIN || *height < GRID_DIMENSION_MIN)
-		return SNAKE_FAIL;
+		return SNAKE_BAD_DIMENSION;
 	if (*width > GRID_DIMENSION_MAX || *height > GRID_DIMENSION_MAX)
-		return SNAKE_FAIL;
+		return SNAKE_BAD_DIMENSION;
 	grid->width = *width;
 	grid->height = *height;
 	snake_result_t result = init_snake(grid);

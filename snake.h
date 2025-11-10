@@ -21,6 +21,7 @@ typedef enum {
 	SNAKE_UNKNOWN,
 	SNAKE_OK,
 	SNAKE_FAIL,
+	SNAKE_BAD_DIMENSION,
 	SNAKE_WIN,
 	SNAKE_LOSE
 } snake_result_t;
