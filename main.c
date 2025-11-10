@@ -30,12 +30,18 @@ static bool parse_args(
 	char** const argv
 );
 
+/**
+ * @brief Print the result of the snake program.
+ * @param[in] result The result of the snake program
+ */
+static void print_snake_result(const snake_result_t* const result);
+
 int main(int argc, char** argv) {
 	snake_args_t args = { 0 };
 	if (!parse_args(&args, &argc, argv))
 		return 1;
 	snake_result_t result = snake(&args);
-	(void)result;
+	print_snake_result(&result);
 	return 0;
 }
 
@@ -61,5 +67,25 @@ static bool parse_args(
 	if (!parse_uint8(argv[1], &args->grid_width) || !parse_uint8(argv[2], &args->grid_height))
 		return false;
 	return true;
+}
+
+static void print_snake_result(const snake_result_t* const result) {
+	switch (*result) {
+		case SNAKE_OK:
+			printf("SNAKE_OK (%d)\n", SNAKE_OK);
+			break;
+		case SNAKE_FAIL:
+			printf("SNAKE_FAIL (%d)\n", SNAKE_FAIL);
+			break;
+		case SNAKE_WIN:
+			printf("SNAKE_WIN (%d)\n", SNAKE_WIN);
+			break;
+		case SNAKE_LOSE:
+			printf("SNAKE_LOSE (%d)\n", SNAKE_LOSE);
+			break;
+		case SNAKE_UNKNOWN:
+		default:
+			printf("SNAKE_UNKNOWN (%d)\n", SNAKE_UNKNOWN);
+	}
 }
 

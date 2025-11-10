@@ -18,6 +18,7 @@ typedef struct {
  * @brief Result codes returned by the snake program.
  */
 typedef enum {
+	SNAKE_UNKNOWN,
 	SNAKE_OK,
 	SNAKE_FAIL,
 	SNAKE_WIN,
