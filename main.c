@@ -10,6 +10,11 @@
 #include <stdio.h>
 
 /**
+ * @brief Information on how to run the snake program.
+ */
+static const char* USAGE = "Usage: ./snake <grid_width> <grid_height>";
+
+/**
  * @brief Parse an eight-bit unsigned integer.
  * @param[in] arg The string argument to parse
  * @param[out] value The parsed integer
@@ -38,8 +43,10 @@ static void print_snake_result(const snake_result_t* const result);
 
 int main(int argc, char** argv) {
 	snake_args_t args = { 0 };
-	if (!parse_args(&args, &argc, argv))
+	if (!parse_args(&args, &argc, argv)) {
+		printf("%s\n", USAGE);
 		return 1;
+	}
 	snake_result_t result = snake(&args);
 	print_snake_result(&result);
 	return 0;
