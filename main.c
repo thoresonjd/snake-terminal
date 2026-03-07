@@ -31,7 +31,7 @@ static bool parse_uint8(const char* const arg, uint8_t* const value);
  */
 static bool parse_args(
 	snake_args_t* const args,
-	const int* const argc,
+	const int argc,
 	char** const argv
 );
 
@@ -39,16 +39,16 @@ static bool parse_args(
  * @brief Print the result of the snake program.
  * @param[in] result The result of the snake program
  */
-static void print_snake_result(const snake_result_t* const result);
+static void print_snake_result(const snake_result_t result);
 
 int main(int argc, char** argv) {
 	snake_args_t args = { 0 };
-	if (!parse_args(&args, &argc, argv)) {
+	if (!parse_args(&args, argc, argv)) {
 		printf("%s\n", USAGE);
 		return 1;
 	}
-	snake_result_t result = snake(&args);
-	print_snake_result(&result);
+	snake_result_t result = snake(args);
+	print_snake_result(result);
 	return 0;
 }
 
@@ -66,18 +66,18 @@ static bool parse_uint8(const char* const arg, uint8_t* const value) {
 
 static bool parse_args(
 	snake_args_t* const args,
-	const int* const argc,
+	const int argc,
 	char** const argv
 ) {
-	if (*argc != 3)
+	if (argc != 3)
 		return false;
 	if (!parse_uint8(argv[1], &args->grid_width) || !parse_uint8(argv[2], &args->grid_height))
 		return false;
 	return true;
 }
 
-static void print_snake_result(const snake_result_t* const result) {
-	switch (*result) {
+static void print_snake_result(const snake_result_t result) {
+	switch (result) {
 		case SNAKE_OK:
 			printf("SNAKE_OK (%d)\n", SNAKE_OK);
 			break;

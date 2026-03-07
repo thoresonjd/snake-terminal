@@ -236,9 +236,9 @@ static void draw_food(const coordinate_t* const food);
  */
 static void draw_snake(const snake_t* const snake);
 
-snake_result_t snake(const snake_args_t* const args) {
+snake_result_t snake(const snake_args_t args) {
 	grid_t grid;
-	snake_result_t result = init_grid(&grid, &args->grid_width, &args->grid_height);
+	snake_result_t result = init_grid(&grid, &args.grid_width, &args.grid_height);
 	if (result != SNAKE_OK)
 		return result;
 	struct termios old_terminal = init_terminal();

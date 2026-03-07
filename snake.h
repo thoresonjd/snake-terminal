@@ -31,5 +31,5 @@ typedef enum {
  * @param[in] args The snake arguments
  * @return Enum denoting the result of the snake program
  */
-snake_result_t snake(const snake_args_t* const args);
+snake_result_t snake(const snake_args_t args);
 
